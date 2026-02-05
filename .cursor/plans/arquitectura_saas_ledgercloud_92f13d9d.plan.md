@@ -194,42 +194,43 @@ modules/customer/
 │   │   ├── Customer.java
 │   │   └── CustomerStatus.java
 │   ├── repository/
-│   │   └── CustomerRepository.java
-│   └── service/
-│       └── CustomerDomainService.java
+│   │   └── CustomerRepository.java  (port)
+│   ├── service/
+│   │   └── CustomerDomainService.java
+│   └── events/
+│       └── CustomerCreatedEvent.java  ← eventos en domain
 ├── application/
 │   ├── usecase/
 │   │   ├── CreateCustomerUseCase.java
 │   │   └── ListCustomersUseCase.java
 │   └── dto/
 ├── infrastructure/
-│   └── persistence/
+│   └── persistence/  (adapters)
 ├── web/
 │   ├── controller/
 │   │   └── CustomerController.java
 │   └── view/
 │       └── CustomerView.java  (Vaadin)
-└── events/
-    └── CustomerCreatedEvent.java
 ```
 
 ---
 
 ## 8. Fase 5: Invoice
 
-Misma plantilla que en tu guía:
-
 ```
 modules/invoice/
 ├── domain/
 │   ├── model/
-│   │   ├── Invoice.java
+│   │   ├── Invoice.java       (POJO, domain rico: cancel(), markAsPaid())
 │   │   ├── InvoiceItem.java
 │   │   └── InvoiceStatus.java
 │   ├── repository/
-│   │   └── InvoiceRepository.java
-│   └── service/
-│       └── InvoiceDomainService.java
+│   │   └── InvoiceRepository.java  (port)
+│   ├── service/
+│   │   └── InvoiceDomainService.java
+│   └── events/
+│       ├── InvoiceCreatedEvent.java
+│       └── InvoicePaidEvent.java   ← eventos en domain
 ├── application/
 │   ├── usecase/
 │   │   ├── CreateInvoiceUseCase.java
@@ -237,44 +238,34 @@ modules/invoice/
 │   │   └── CancelInvoiceUseCase.java
 │   └── dto/
 ├── infrastructure/
-│   ├── persistence/
-│   ├── messaging/
-│   │   └── InvoiceEventPublisher.java
-│   └── external/
-│       └── DianClient.java (si aplica)
+│   ├── persistence/     (InvoiceEntity, adapters)
+│   ├── messaging/       (InvoiceEventPublisher → RabbitMQ)
+│   └── external/        (DianClient)
 ├── web/
 │   ├── controller/
 │   └── view/
-└── events/
-    ├── InvoiceCreatedEvent.java
-    └── InvoicePaidEvent.java
 ```
 
 ---
 
-## 9. Reglas de dependencia
+## 9. Reglas de dependencia (Ports & Adapters)
 
 ```mermaid
-flowchart LR
-    subgraph layers
-        web[web]
-        app[application]
-        domain[domain]
-        infra[infrastructure]
-    end
+flowchart TB
+    domain[domain - centro]
+    app[application]
+    infra[infrastructure]
+    web[web]
     
-    web --> app
     app --> domain
     infra --> domain
-    web --> infra
+    web --> app
 ```
 
-
-
-- **Domain**: sin dependencias de Spring ni de otros módulos
-- **Application**: orquesta use cases, depende solo de domain
-- **Infrastructure**: implementa repositorios, eventos, clientes externos
-- **Web**: controllers y vistas, llama a use cases
+- **Domain**: Cero dependencias. POJOs + interfaces (ports). Domain rico.
+- **Application**: @Service, @Transactional OK. Prohibido: JPA, Spring MVC.
+- **Infrastructure**: Adapters. JPA entities (distintas del domain model), RabbitMQ, APIs.
+- **Shared**: Solo cross-cutting. Si es específico de dominio → módulo.
 
 ---
 
