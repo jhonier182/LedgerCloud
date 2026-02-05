@@ -1,7 +1,5 @@
 package com.ledgercloud.shared.exceptions;
 
-import java.time.Instant;
-
 public class BusinessException extends RuntimeException {
     
     private final String code;
